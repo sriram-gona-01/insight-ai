@@ -85,10 +85,9 @@ Insight AI lets you upload PowerPoint decks or PDFs containing slides, flow-char
    pip install -r requirements.txt
    ```
 
-4. **Create** a `.env` file at project root (add to `.gitignore`):
-   ```dotenv
-   DATABASE_URL=postgresql://rag_user:SecretPass@localhost:5432/rfp_rag
-   EMBED_MODEL=sentence-transformers/msmarco-bert-base-dot-v5
+4. **Create** a db in pgvector file at project root (add to `.gitignore`):
+   ```
+   DATABASE_URL=postgresql://<user>:<password>/<db_name>
    ```
 
 5. **Ensure** your Postgres has pgvector:
@@ -121,7 +120,7 @@ Insight AI lets you upload PowerPoint decks or PDFs containing slides, flow-char
 
 1. **Ensure** Docker & Docker Compose are installed.
 
-2. **Edit** `.env` with your Postgres creds.
+2. **Edit** Database URL with your Postgres creds.
 
 3. **Bring up** the stack:
    ```bash
@@ -150,7 +149,7 @@ Insight AI lets you upload PowerPoint decks or PDFs containing slides, flow-char
 All runtime settings live in `app/settings.py`, sourced from:
 
 - **Environment variables** (e.g. on server or CI)
-- A local `.env` file for dev
+
 
 | Variable       | Default                                      | Purpose                             |
 | -------------- | -------------------------------------------- | ----------------------------------- |
