@@ -1,5 +1,17 @@
-venv/
+# Python
 __pycache__/
 *.py[cod]
-output/
-ui/node_modules/
+venv/
+.env
+
+# macOS
+.DS_Store
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log
+
+# Editor
+.vscode/
