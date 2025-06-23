@@ -4,6 +4,7 @@
 
 ## 🏗️ Project Structure
 
+```nginx
 .
 ├── app/
 │ ├── extractor.py
@@ -18,6 +19,7 @@
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+```
 
 
 ## ⚙️ Prerequisites
