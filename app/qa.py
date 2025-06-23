@@ -6,7 +6,7 @@ from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer
 from app.retriever import retrieve
 
-DATABASE_URL="postgresql://localhost:5432/rfp_rag"
+DATABASE_URL="postgresql://localhost:5432/insight_rag"
 
 EMBED_MODEL = "sentence-transformers/msmarco-bert-base-dot-v5"
 

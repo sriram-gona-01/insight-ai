@@ -7,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 
 
 
-DATABASE_URL="postgresql://localhost:5432/rfp_rag"
+DATABASE_URL="postgresql://localhost:5432/insight_rag"
 
 EMBED_MODEL = "sentence-transformers/msmarco-bert-base-dot-v5"
 

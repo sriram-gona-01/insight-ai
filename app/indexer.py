@@ -7,7 +7,7 @@ from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer
 from app.extractor import extract_documents
 
-DATABASE_URL="postgresql://localhost:5432/rfp_rag"
+DATABASE_URL="postgresql://localhost:5432/insight_rag"
 if not DATABASE_URL:
     raise RuntimeError("Please set the DATABASE_URL environment variable")
 
