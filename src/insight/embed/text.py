@@ -9,6 +9,8 @@ class TextEmbedder(Protocol):
 
     def embed(self, texts: list[str]) -> list[list[float]]: ...
 
+    def embed_query(self, text: str) -> list[float]: ...
+
 
 def _resolve_device(device: str) -> str:
     if device != "auto":
@@ -21,7 +23,10 @@ def _resolve_device(device: str) -> str:
 class SentenceTransformerEmbedder:
     """Loads the model on first use, so skipped and rejected files don't pay for it."""
 
-    def __init__(self, model_name: str, revision: str, dim: int, device: str) -> None:
+    def __init__(
+        self, model_name: str, revision: str, dim: int, device: str, query_instruction: str
+    ) -> None:
+        self._query_instruction = query_instruction
         self._model_name = model_name
         self._revision = revision
         self._dim = dim
@@ -48,9 +53,23 @@ class SentenceTransformerEmbedder:
         vectors = self._model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
         return vectors.tolist()
 
+    def embed_query(self, text: str) -> list[float]:
+        """Queries get the model's retrieval instruction; passages don't."""
+        return self.embed([f"{self._query_instruction}{text}"])[0]
+
 
 @lru_cache(maxsize=1)
 def get_text_embedder(
-    model_name: str, revision: str, dim: int, device: str
+    model_name: str, revision: str, dim: int, device: str, query_instruction: str
 ) -> SentenceTransformerEmbedder:
-    return SentenceTransformerEmbedder(model_name, revision, dim, device)
+    return SentenceTransformerEmbedder(model_name, revision, dim, device, query_instruction)
+
+
+def embedder_from_settings(settings: Any) -> SentenceTransformerEmbedder:
+    return get_text_embedder(
+        settings.embedding_model,
+        settings.embedding_revision,
+        settings.embedding_dim,
+        settings.embedding_device,
+        settings.embedding_query_instruction,
+    )

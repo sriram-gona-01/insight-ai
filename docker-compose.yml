@@ -1,3 +1,12 @@
+x-app: &app
+  build: .
+  image: insight-ai:local
+  env_file:
+    - path: .env
+      required: false
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
 services:
   db:
     image: pgvector/pgvector:0.8.7-pg17-trixie
@@ -15,5 +24,57 @@ services:
       timeout: 3s
       retries: 20
 
+  api:
+    <<: *app
+    command: uvicorn --factory insight.api.app:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: postgresql://insight:${POSTGRES_PASSWORD:-insight}@db:5432/insight
+      DATA_DIR: /data
+      HF_HOME: /cache/huggingface
+      OLLAMA_URL: ${COMPOSE_OLLAMA_URL:-http://host.docker.internal:11434}
+    volumes:
+      - data:/data
+      - models:/cache
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  ui:
+    <<: *app
+    command: >-
+      streamlit run src/insight/ui/streamlit_app.py
+      --server.address 0.0.0.0 --server.port 8501 --browser.gatherUsageStats false
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:${UI_PORT:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8501/_stcore/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  # For Linux hosts with a GPU. Set COMPOSE_OLLAMA_URL=http://ollama:11434 and use
+  # `docker compose --profile linux-gpu up`. On macOS, Ollama runs natively instead.
+  ollama:
+    image: ollama/ollama:0.40.13
+    profiles: ["linux-gpu"]
+    gpus: all
+    volumes:
+      - ollama:/root/.ollama
+
 volumes:
   pgdata:
+  data:
+  models:
+  ollama:

@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 import psycopg
 from pgvector.psycopg import register_vector
 from psycopg.rows import class_row
-from psycopg_pool import ConnectionPool
+from psycopg_pool import ConnectionPool, PoolTimeout
 
 from insight.models import Chunk, Document, Slide
 
@@ -122,3 +122,35 @@ def list_documents(pool: ConnectionPool) -> list[Document]:
              ORDER BY created_at
             """
         ).fetchall()
+
+
+def get_document(pool: ConnectionPool, doc_id: UUID) -> Document | None:
+    with pool.connection() as conn, conn.cursor(row_factory=class_row(Document)) as cur:
+        return cur.execute(
+            """
+            SELECT id, filename, sha256, n_slides, status, error, created_at
+              FROM documents
+             WHERE id = %s
+            """,
+            (doc_id,),
+        ).fetchone()
+
+
+def delete_document(pool: ConnectionPool, doc_id: UUID) -> None:
+    with pool.connection() as conn:
+        conn.execute("DELETE FROM documents WHERE id = %s", (doc_id,))
+
+
+def get_slide_image_path(pool: ConnectionPool, slide_id: UUID) -> str | None:
+    with pool.connection() as conn:
+        row = conn.execute("SELECT image_path FROM slides WHERE id = %s", (slide_id,)).fetchone()
+    return row[0] if row else None
+
+
+def is_reachable(pool: ConnectionPool) -> bool:
+    try:
+        with pool.connection(timeout=3) as conn:
+            conn.execute("SELECT 1")
+    except (psycopg.Error, PoolTimeout):
+        return False
+    return True
