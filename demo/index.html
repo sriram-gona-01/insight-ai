@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insight AI demo</title>
+<meta name="description" content="Recorded answers from Insight AI, a self-hosted question-answering system for slide decks.">
+<style>
+  :root {
+    --bg: #fbfaf8; --surface: #ffffff; --text: #1d2125; --muted: #5f6770;
+    --line: #e2dfd9; --accent: #1f5f8b; --accent-soft: #e4eff6; --warn-bg: #fbf1dc; --warn: #6f5310;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181b; --surface: #1e2226; --text: #eceef0; --muted: #a1a9b1;
+      --line: #33393f; --accent: #8cc4e8; --accent-soft: #223543; --warn-bg: #3a3018; --warn: #ecd28f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 56px; }
+  h1 { margin: 0; font-size: 1.9rem; letter-spacing: -0.01em; }
+  h2 { margin: 0 0 10px; font-size: 0.8rem; color: var(--muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em; }
+  a { color: var(--accent); }
+  .lede { margin: 8px 0 18px; color: var(--muted); max-width: 66ch; }
+  .notice { background: var(--warn-bg); color: var(--warn); border-radius: 8px;
+    padding: 10px 14px; font-size: 0.92rem; margin-bottom: 24px; }
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .questions { display: grid; gap: 8px; }
+  .question { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface);
+    color: inherit; border-radius: 8px; padding: 10px 12px; font: inherit; cursor: pointer; }
+  .question:hover { border-color: var(--accent); }
+  .question[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .category { display: block; color: var(--muted); font-size: 0.78rem; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .asked { font-size: 1.15rem; font-weight: 600; margin: 0 0 12px; }
+  .answer { margin: 0 0 18px; font-size: 1.05rem; }
+  .abstained { color: var(--muted); font-style: italic; }
+  .tag { border: 0; background: var(--accent-soft); color: var(--accent); border-radius: 4px;
+    padding: 0 5px; font: inherit; font-size: 0.85em; font-weight: 600; cursor: pointer; }
+  .slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .slide { border: 1px solid var(--line); background: none; color: inherit; border-radius: 8px; padding: 0;
+    overflow: hidden; cursor: zoom-in; font: inherit; text-align: left; }
+  .slide.cited { border: 2px solid var(--accent); }
+  .slide img { display: block; width: 100%; height: auto; }
+  .slide span { display: block; padding: 5px 8px; font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .timings { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+  .timings dt { color: var(--muted); display: inline; }
+  .timings dd { display: inline; margin: 0 0 0 5px; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 0.85rem; }
+  dialog { border: 0; border-radius: 10px; padding: 0; max-width: min(1000px, 94vw); background: var(--surface); color: var(--text); }
+  dialog::backdrop { background: rgb(0 0 0 / 0.65); }
+  dialog img { display: block; width: 100%; height: auto; }
+  dialog form { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 12px; font-size: 0.9rem; }
+  dialog button { font: inherit; background: none; border: 1px solid var(--line); color: inherit; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Insight AI</h1>
+  <p class="lede">A self-hosted system that answers questions about slide decks and cites the slides it used.
+    This page replays answers from a sample deck about a fictional company.
+    <a href="https://github.com/sriram-gona-01/insight-ai">Source and setup on GitHub</a>.</p>
+  <p class="notice" id="notice">Recorded answers. This page doesn't run a model, so you can't ask new questions here.</p>
+  <div class="layout">
+    <section aria-label="Questions">
+      <h2>Pick a question</h2>
+      <div class="questions" id="questions"></div>
+    </section>
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+  <footer id="footer"></footer>
+</main>
+<dialog id="viewer">
+  <img id="viewer-image" alt="">
+  <form method="dialog"><span id="viewer-caption"></span><button>Close</button></form>
+</dialog>
+<script>
+  const el = (tag, props = {}, children = []) => {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...children);
+    return node;
+  };
+
+  function openSlide(slide) {
+    const viewer = document.getElementById("viewer");
+    const image = document.getElementById("viewer-image");
+    image.src = slide.image;
+    image.alt = `Slide ${slide.slide_no}: ${slide.title}`;
+    document.getElementById("viewer-caption").textContent = `Slide ${slide.slide_no}: ${slide.title}`;
+    viewer.showModal();
+  }
+
+  function answerNodes(entry) {
+    return entry.answer.split(/(\[S\d+(?:, S\d+)*\])/).flatMap((part) => {
+      if (!/^\[S\d/.test(part)) return [part];
+      return [...part.matchAll(/S(\d+)/g)].map((match) => {
+        const slide = entry.retrieved[Number(match[1]) - 1];
+        return el("button", {
+          className: "tag",
+          textContent: `Slide ${slide.slide_no}`,
+          onclick: () => openSlide(slide),
+        });
+      });
+    });
+  }
+
+  function show(entry, button) {
+    document.querySelectorAll(".question").forEach((b) => b.setAttribute("aria-pressed", b === button));
+    const answer = el("p", { className: entry.abstained ? "answer abstained" : "answer" }, answerNodes(entry));
+    const slides = entry.retrieved.map((slide) => {
+      const cited = entry.cited_slides.includes(slide.slide_no);
+      return el("button", { className: cited ? "slide cited" : "slide", onclick: () => openSlide(slide) }, [
+        el("img", { src: slide.image, alt: `Slide ${slide.slide_no}: ${slide.title}`, loading: "lazy" }),
+        el("span", { textContent: `Slide ${slide.slide_no}, score ${slide.score.toFixed(3)}${cited ? ", cited" : ""}` }),
+      ]);
+    });
+    const timings = Object.entries(entry.timings_ms).flatMap(([stage, ms]) => [
+      el("div", {}, [el("dt", { textContent: stage }), el("dd", { textContent: ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms` })]),
+    ]);
+    document.getElementById("panel").replaceChildren(
+      el("p", { className: "asked", textContent: entry.question }),
+      answer,
+      el("h2", { textContent: "Slides retrieved (cited ones outlined)" }),
+      el("div", { className: "slides" }, slides),
+      el("h2", { textContent: "Time per stage" }),
+      el("dl", { className: "timings" }, timings),
+    );
+  }
+
+  fetch("data.json").then((r) => r.json()).then((data) => {
+    const list = document.getElementById("questions");
+    data.questions.forEach((entry, i) => {
+      const button = el("button", { className: "question", onclick: () => show(entry, button) }, [
+        el("span", { className: "category", textContent: entry.category }),
+        entry.question,
+      ]);
+      button.setAttribute("aria-pressed", "false");
+      list.append(button);
+      if (i === 0) show(entry, button);
+    });
+    document.getElementById("notice").textContent =
+      `Recorded answers from ${data.recorded_on}. This page doesn't run a model, so you can't ask new questions here.`;
+    document.getElementById("footer").textContent =
+      `Recorded with ${data.model}, pipeline ${data.pipeline}, top-${data.top_k}, context "${data.context_format}", ` +
+      `on ${data.hardware}, commit ${data.git_sha.slice(0, 7)}. A small sample, not an evaluation.`;
+  }).catch(() => {
+    document.getElementById("panel").textContent = "The recorded answers couldn't be loaded.";
+  });
+</script>
+</body>
+</html>

@@ -10,7 +10,10 @@ from psycopg_pool import PoolTimeout
 
 from insight import __version__
 from insight.config import Settings
-from insight.embed.text import get_text_embedder
+from insight.embed.text import embedder_from_settings
+from insight.generate.answer import answer_question
+from insight.generate.llm import LLMError, get_llm_client
+from insight.generate.prompts import ContextFormat
 from insight.ingest.pipeline import InvalidDocument, ingest_file
 from insight.store import db
 
@@ -59,12 +62,7 @@ def ingest(
 ) -> None:
     """Render, extract, embed, and store documents. Already-ingested files are skipped."""
     settings = Settings()
-    embedder = get_text_embedder(
-        settings.embedding_model,
-        settings.embedding_revision,
-        settings.embedding_dim,
-        settings.embedding_device,
-    )
+    embedder = embedder_from_settings(settings)
     failed = False
     try:
         pool = db.get_pool(settings.database_url)
@@ -87,6 +85,38 @@ def ingest(
         raise typer.Exit(1) from e
     if failed:
         raise typer.Exit(1)
+
+
+@app.command()
+def ask(
+    question: str,
+    top_k: Annotated[int | None, typer.Option(help="Slides to retrieve")] = None,
+    context_format: Annotated[ContextFormat, typer.Option(help="text, image, or both")] = "both",
+) -> None:
+    """Answer a question from the ingested documents, with citations."""
+    settings = Settings()
+    try:
+        result = answer_question(
+            question,
+            "A",
+            top_k or settings.default_top_k,
+            context_format,
+            settings,
+            db.get_pool(settings.database_url),
+            embedder_from_settings(settings),
+            get_llm_client(settings),
+        )
+    except (psycopg.Error, PoolTimeout) as e:
+        typer.echo(f"{DB_HELP}\n{e}", err=True)
+        raise typer.Exit(1) from e
+    except LLMError as e:
+        typer.echo(f"The model request failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    typer.echo(result.answer.text)
+    for citation in result.answer.citations:
+        typer.echo(f"  cited: {citation.doc}, slide {citation.slide_no}")
+    timings = ", ".join(f"{stage} {ms:.0f} ms" for stage, ms in result.timings_ms.items())
+    typer.echo(f"  timings: {timings}")
 
 
 @docs_app.command("list")

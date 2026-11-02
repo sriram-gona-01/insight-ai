@@ -36,3 +36,29 @@ class Chunk:
     kind: ChunkKind
     text: str
     embedding: list[float]
+
+
+@dataclass(frozen=True)
+class RetrievedSlide:
+    slide_id: UUID
+    doc_id: UUID
+    filename: str
+    slide_no: int
+    title: str
+    text: str
+    image_path: str
+    score: float
+
+
+@dataclass(frozen=True)
+class Citation:
+    doc: str
+    slide_no: int
+    slide_id: UUID
+
+
+@dataclass(frozen=True)
+class Answer:
+    text: str
+    citations: list[Citation]
+    abstained: bool

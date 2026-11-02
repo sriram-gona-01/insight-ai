@@ -32,6 +32,9 @@ class FakeEmbedder:
     def embed(self, texts: list[str]) -> list[list[float]]:
         return [[1.0, 0.0, 0.0, 0.0] for _ in texts]
 
+    def embed_query(self, text: str) -> list[float]:
+        return [1.0, 0.0, 0.0, 0.0]
+
 
 def _ensure_test_database() -> None:
     maintenance = make_conninfo(TEST_DATABASE_URL, dbname="postgres")

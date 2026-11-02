@@ -114,45 +114,66 @@ def _build_records(
     return slides, chunks
 
 
-def ingest_file(
-    path: Path, settings: Settings, pool: ConnectionPool, embedder: TextEmbedder
-) -> IngestResult:
-    """Ingest one file. Bad input raises InvalidDocument; later errors mark the document failed."""
+@dataclass(frozen=True)
+class Admission:
+    """A file that passed validation and has a document row."""
+
+    doc_id: UUID
+    sha256: str
+    stored: Path
+    status: str
+    should_process: bool
+
+
+def admit_file(path: Path, filename: str, settings: Settings, pool: ConnectionPool) -> Admission:
+    """Validate, store by content hash, and claim the document. Bad input raises InvalidDocument."""
     validate_file(path, settings.max_file_mb)
     sha256 = file_sha256(path)
-    claim = db.claim_document(
-        pool, clean_filename(path.name), sha256, settings.ingest_stale_minutes
-    )
-    if not claim.should_process:
-        return IngestResult(claim.doc_id, sha256, claim.status, skipped=True)
+    stored = _store_original(path, settings.data_dir / "decks", sha256)
+    claim = db.claim_document(pool, clean_filename(filename), sha256, settings.ingest_stale_minutes)
+    return Admission(claim.doc_id, sha256, stored, claim.status, claim.should_process)
 
+
+def process_document(
+    admission: Admission, settings: Settings, pool: ConnectionPool, embedder: TextEmbedder
+) -> IngestResult:
+    """Run render, extract, and embed. Any failure is recorded on the document."""
+    doc_id, sha256 = admission.doc_id, admission.sha256
     try:
-        stored = _store_original(path, settings.data_dir / "decks", sha256)
-
-        db.set_status(pool, claim.doc_id, "rendering")
+        db.set_status(pool, doc_id, "rendering")
         pages_dir = settings.data_dir / "pages" / sha256
         shutil.rmtree(pages_dir, ignore_errors=True)
         images = render_document(
-            stored,
+            admission.stored,
             pages_dir,
             settings.render_dpi,
             settings.soffice_path,
             settings.soffice_timeout_seconds,
         )
 
-        db.set_status(pool, claim.doc_id, "extracting")
-        extracted = extract_document(stored)
+        db.set_status(pool, doc_id, "extracting")
+        extracted = extract_document(admission.stored)
         if not extracted:
             raise ValueError("The document has no slides or pages")
         if len(images) != len(extracted):
             raise ValueError(f"Rendered {len(images)} images but extracted {len(extracted)} slides")
 
-        db.set_status(pool, claim.doc_id, "embedding")
-        slides, chunks = _build_records(claim.doc_id, sha256, extracted, embedder, settings)
-        db.save_slides(pool, claim.doc_id, slides, chunks)
+        db.set_status(pool, doc_id, "embedding")
+        slides, chunks = _build_records(doc_id, sha256, extracted, embedder, settings)
+        db.save_slides(pool, doc_id, slides, chunks)
     except Exception as e:
         error = f"{type(e).__name__}: {e}"[:1000]
-        db.set_status(pool, claim.doc_id, "failed", error)
-        return IngestResult(claim.doc_id, sha256, "failed", skipped=False, error=error)
+        db.set_status(pool, doc_id, "failed", error)
+        return IngestResult(doc_id, sha256, "failed", skipped=False, error=error)
 
-    return IngestResult(claim.doc_id, sha256, "ready", skipped=False)
+    return IngestResult(doc_id, sha256, "ready", skipped=False)
+
+
+def ingest_file(
+    path: Path, settings: Settings, pool: ConnectionPool, embedder: TextEmbedder
+) -> IngestResult:
+    """Admit and process one file in the current thread."""
+    admission = admit_file(path, path.name, settings, pool)
+    if not admission.should_process:
+        return IngestResult(admission.doc_id, admission.sha256, admission.status, skipped=True)
+    return process_document(admission, settings, pool, embedder)
