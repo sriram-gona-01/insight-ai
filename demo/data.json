@@ -1,0 +1,245 @@
+{
+  "recorded_on": "2026-11-02",
+  "git_sha": "71eda976170b2eb85f2f2aa01f02f34281f8a565",
+  "model": "qwen3-vl:4b",
+  "pipeline": "A",
+  "top_k": 3,
+  "context_format": "both",
+  "hardware": "Apple M1",
+  "questions": [
+    {
+      "category": "Chart",
+      "question": "What was revenue in Q2 2026?",
+      "answer": "42.9 ($M) [S1]",
+      "abstained": false,
+      "cited_slides": [
+        3
+      ],
+      "retrieved": [
+        {
+          "slide_no": 3,
+          "title": "Quarterly revenue and cost",
+          "score": 0.73,
+          "image": "slides/3.jpg"
+        },
+        {
+          "slide_no": 1,
+          "title": "Northwind Kites: Q3 2026 results",
+          "score": 0.634,
+          "image": "slides/1.jpg"
+        },
+        {
+          "slide_no": 4,
+          "title": "Q3 results by segment",
+          "score": 0.596,
+          "image": "slides/4.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 12404,
+        "search": 38,
+        "generate": 46089
+      }
+    },
+    {
+      "category": "Table",
+      "question": "What was the gross margin for accessories?",
+      "answer": "52% [S1]",
+      "abstained": false,
+      "cited_slides": [
+        4
+      ],
+      "retrieved": [
+        {
+          "slide_no": 4,
+          "title": "Q3 results by segment",
+          "score": 0.701,
+          "image": "slides/4.jpg"
+        },
+        {
+          "slide_no": 3,
+          "title": "Quarterly revenue and cost",
+          "score": 0.568,
+          "image": "slides/3.jpg"
+        },
+        {
+          "slide_no": 7,
+          "title": "Risks and outlook",
+          "score": 0.55,
+          "image": "slides/7.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 363,
+        "search": 16,
+        "generate": 32649
+      }
+    },
+    {
+      "category": "Picture of a chart",
+      "question": "What share of customers are in the East region?",
+      "answer": "18% [S1]",
+      "abstained": false,
+      "cited_slides": [
+        6
+      ],
+      "retrieved": [
+        {
+          "slide_no": 6,
+          "title": "Where customers are",
+          "score": 0.703,
+          "image": "slides/6.jpg"
+        },
+        {
+          "slide_no": 2,
+          "title": "Q3 highlights",
+          "score": 0.557,
+          "image": "slides/2.jpg"
+        },
+        {
+          "slide_no": 5,
+          "title": "Order system architecture",
+          "score": 0.549,
+          "image": "slides/5.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 503,
+        "search": 12,
+        "generate": 32038
+      }
+    },
+    {
+      "category": "Diagram",
+      "question": "Which component connects the Order API to the Tulsa factory?",
+      "answer": "Warehouse queue [S1]",
+      "abstained": false,
+      "cited_slides": [
+        5
+      ],
+      "retrieved": [
+        {
+          "slide_no": 5,
+          "title": "Order system architecture",
+          "score": 0.828,
+          "image": "slides/5.jpg"
+        },
+        {
+          "slide_no": 2,
+          "title": "Q3 highlights",
+          "score": 0.619,
+          "image": "slides/2.jpg"
+        },
+        {
+          "slide_no": 6,
+          "title": "Where customers are",
+          "score": 0.515,
+          "image": "slides/6.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 246,
+        "search": 15,
+        "generate": 35049
+      }
+    },
+    {
+      "category": "Speaker notes",
+      "question": "When does the Tulsa factory start full production?",
+      "answer": "The Tulsa factory starts full production in February 2027 [S1].",
+      "abstained": false,
+      "cited_slides": [
+        2
+      ],
+      "retrieved": [
+        {
+          "slide_no": 2,
+          "title": "Q3 highlights",
+          "score": 0.858,
+          "image": "slides/2.jpg"
+        },
+        {
+          "slide_no": 5,
+          "title": "Order system architecture",
+          "score": 0.708,
+          "image": "slides/5.jpg"
+        },
+        {
+          "slide_no": 1,
+          "title": "Northwind Kites: Q3 2026 results",
+          "score": 0.484,
+          "image": "slides/1.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 520,
+        "search": 18,
+        "generate": 35798
+      }
+    },
+    {
+      "category": "Multiple slides",
+      "question": "How does Q3 revenue compare with the Q4 guidance?",
+      "answer": "Not found in the documents",
+      "abstained": true,
+      "cited_slides": [],
+      "retrieved": [
+        {
+          "slide_no": 4,
+          "title": "Q3 results by segment",
+          "score": 0.692,
+          "image": "slides/4.jpg"
+        },
+        {
+          "slide_no": 3,
+          "title": "Quarterly revenue and cost",
+          "score": 0.681,
+          "image": "slides/3.jpg"
+        },
+        {
+          "slide_no": 2,
+          "title": "Q3 highlights",
+          "score": 0.667,
+          "image": "slides/2.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 752,
+        "search": 15,
+        "generate": 34614
+      }
+    },
+    {
+      "category": "Unanswerable",
+      "question": "Who is the CEO of Northwind Kites?",
+      "answer": "Not found in the documents",
+      "abstained": true,
+      "cited_slides": [],
+      "retrieved": [
+        {
+          "slide_no": 1,
+          "title": "Northwind Kites: Q3 2026 results",
+          "score": 0.721,
+          "image": "slides/1.jpg"
+        },
+        {
+          "slide_no": 4,
+          "title": "Q3 results by segment",
+          "score": 0.571,
+          "image": "slides/4.jpg"
+        },
+        {
+          "slide_no": 2,
+          "title": "Q3 highlights",
+          "score": 0.446,
+          "image": "slides/2.jpg"
+        }
+      ],
+      "timings_ms": {
+        "embed": 255,
+        "search": 15,
+        "generate": 33780
+      }
+    }
+  ]
+}

@@ -83,3 +83,25 @@ The other §3 facts are checked and recorded here before the milestone that depe
 - **`updated_at` and `INGEST_STALE_MINUTES` added.** Without them, a process killed mid-ingest
   would leave a document unfinished, and re-ingesting would skip it forever.
 - **Slide `image_path` is relative to `DATA_DIR`,** so paths work on the host and in containers.
+
+## 2026-11-02: M2 facts and deferrals
+
+- **Ollama upgraded to 0.40.13.** 0.12.9 got a 412 pulling `qwen3-vl`, despite the library page
+  listing 0.12.7 as the minimum. `/api/show` reports `vision`, `tools`, and `thinking` for
+  `qwen3-vl:4b` and `:8b`. `/api/chat` takes base64 `images`, and `options.num_ctx` sets context.
+- **Context size:** 5 slides needed about 5,700 tokens, above the default 4,096, so
+  `LLM_CONTEXT_TOKENS` defaults to 16,384.
+- **Query instruction:** bge queries use "Represent this sentence for searching relevant
+  passages: ", from the model card.
+- **Timing (informal, not an evaluation):** on the Apple M1, `qwen3-vl:4b` with top-k 3 took 32 to
+  46 s to generate each of 7 demo answers. Search took under 40 ms.
+- **Deferred at the project owner's request, 2026-11-02,** to publish the URL first. These M2
+  verification items in the spec are not done:
+  - Comparing `qwen3-vl:4b` with `:8b`. `:4b` and top-k 3 are provisional. The spec's top-k 5 was
+    not timed end to end after the context fix.
+  - Building the Docker image, and the fresh-clone `make up && make ingest-sample` check. The
+    README doesn't document them until this passes.
+  - Opening the Streamlit UI in a browser.
+- **Demo recording:** real answers from the API running natively, not in Docker, at commit
+  `71eda97`. One of 7 questions, comparing Q3 with Q4 guidance, abstains because slide 7 isn't
+  retrieved at top-k 3. It stays in the demo as recorded.
