@@ -5,4 +5,10 @@ lint:
 test:
 	uv run pytest -m "not integration"
 
-.PHONY: lint test
+test-integration:
+	uv run pytest -m integration
+
+db:
+	docker compose up -d --wait db
+
+.PHONY: lint test test-integration db

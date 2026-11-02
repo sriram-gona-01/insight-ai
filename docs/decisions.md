@@ -52,3 +52,34 @@ The other §3 facts are checked and recorded here before the milestone that depe
 - **CLI in M0 has one real command (`version`).** Spec M0 asks for a CLI stub, and §4 forbids
   stubs. Other commands arrive with the milestones that implement them.
 - **Makefile targets arrive with their milestones,** for the same reason. M0 has `lint` and `test`.
+
+## 2026-11-01: Facts verified for M1 (spec §3)
+
+- **pgvector (§3.4):** image `pgvector/pgvector:0.8.7-pg17-trixie`, PostgreSQL 17.11, extension
+  0.8.7. HNSW built on `vector(384)` and on `halfvec(3000)` here. The project docs give HNSW
+  limits of 2,000 dims for `vector` and 4,000 for `halfvec`. Tag pinned rather than `pg18`
+  because pg18's data-directory behaviour in the image has not been checked.
+- **PPTX rendering (§3.5):** LibreOffice 26.8.2.2 from `brew install --cask libreoffice`,
+  converted a generated PPTX headless, and pypdfium2 5.14.0 rasterized it. The Docker image is
+  checked in M2. CI runs the same path on Ubuntu with `libreoffice-impress`.
+- **LibreOffice drops hidden slides from its PDF.** Confirmed by the integration test.
+  Extraction skips them too, so slide numbers match images, and ingest fails if counts differ.
+
+## 2026-11-01: M1 choices
+
+- **Text embedder:** `BAAI/bge-small-en-v1.5`, 384 dims, MIT, revision
+  `5c38ec7c405ec4b44b94cc5a9bb96e735b38267a`, run with sentence-transformers 6.2.0 on PyTorch.
+  PyTorch is needed by the reranker and visual model later, so this keeps one ML stack. The cost
+  is a virtual environment of about 950 MB.
+- **Title prefix (spec addition):** a chunk's embedded text starts with its slide title, since
+  a bare table or chart often doesn't say what it is about. `CHUNK_TITLE_PREFIX` turns it off,
+  and the stored chunk text stays the raw block.
+- **PDF tables:** text in a detected table is removed from the page text and stored only as a
+  markdown table, so numbers aren't indexed twice. A detected table needs at least 2 rows and 2
+  columns, because pdfplumber also reports single bordered boxes as tables.
+- **Database port 5433:** this machine already runs a native Postgres on 5432. The compose
+  database binds to localhost only, and `DB_PORT` changes the port.
+- **`ingest/chunk.py` added to the §5 layout,** to keep splitting separate from extraction.
+- **`updated_at` and `INGEST_STALE_MINUTES` added.** Without them, a process killed mid-ingest
+  would leave a document unfinished, and re-ingesting would skip it forever.
+- **Slide `image_path` is relative to `DATA_DIR`,** so paths work on the host and in containers.
