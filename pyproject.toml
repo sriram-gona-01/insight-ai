@@ -6,7 +6,16 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 dependencies = [
+    "numpy>=2.4.6",
+    "pdfplumber>=0.11.10",
+    "pgvector>=0.5.1",
+    "pillow>=13.0.0",
+    "psycopg-pool>=3.3.3",
+    "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.6",
+    "pypdfium2>=5.14.0",
+    "python-pptx>=1.0.2",
+    "sentence-transformers>=6.2.0",
     "typer>=0.15",
 ]
 
@@ -16,6 +25,7 @@ insight = "insight.cli:app"
 [dependency-groups]
 dev = [
     "pytest>=8.3",
+    "reportlab>=5.1.0",
     "ruff>=0.8",
 ]
 
@@ -35,4 +45,5 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 markers = ["integration: needs Postgres or real models"]
